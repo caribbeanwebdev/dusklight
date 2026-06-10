@@ -53,3 +53,4 @@ compile_commands.json
 pipeline_cache.bin
 
 extract
+dist/

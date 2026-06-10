@@ -8,6 +8,16 @@
   </p>
 </div>
 
+> [!NOTE]
+> ### 🌐 Web port
+> This fork adds a **web platform target**: Dusklight compiled to WebAssembly, running entirely
+> in the browser on WebGPU — including touch controls, a key-binding editor, and persistent saves.
+>
+> **Play it at [dusklight.pages.dev](https://dusklight.pages.dev)** (you must provide a dump of
+> your own copy of the game). To build it yourself, use the `web-default` preset — see the
+> [build instructions](docs/building.md). Everything else in this project is the original work
+> of the TwilitRealm team and the communities credited below.
+
 # Overview
 
 Dusklight is a reverse-engineered reimplementation of Twilight Princess.

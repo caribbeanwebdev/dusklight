@@ -1,0 +1,15 @@
+# Cloudflare Pages headers for the Dusklight web build.
+# COOP/COEP enable SharedArrayBuffer (pthreads); WebGPU needs the secure
+# context that Pages already provides over HTTPS.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+
+/dusklight.wasm
+  Content-Type: application/wasm
+
+# Pre-compressed fallback when the .wasm exceeds the per-file limit:
+# stored as .wasm.br, served as wasm with brotli content-encoding.
+/dusklight.wasm.br
+  Content-Type: application/wasm
+  Content-Encoding: br

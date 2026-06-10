@@ -577,7 +577,7 @@ if (EMSCRIPTEN)
         -sINVOKE_RUN=0 "-sEXPORTED_RUNTIME_METHODS=callMain,FS,IDBFS,ccall"
         # IDBFS backs the user-data dir so saves/config persist across reloads.
         -lidbfs.js
-        -sASSERTIONS=1 -sEXIT_RUNTIME=0
+        "$<$<NOT:$<CONFIG:Release>>:-sASSERTIONS=1>" -sEXIT_RUNTIME=0
         "--shell-file=${CMAKE_SOURCE_DIR}/platforms/web/shell.html"
         "--preload-file=${CMAKE_SOURCE_DIR}/res@/res")
     set_property(TARGET dusklight APPEND PROPERTY LINK_DEPENDS ${CMAKE_SOURCE_DIR}/platforms/web/shell.html)

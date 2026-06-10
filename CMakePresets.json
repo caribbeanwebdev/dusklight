@@ -415,6 +415,21 @@
       ]
     },
     {
+      "name": "web-default-release",
+      "displayName": "Web (Emscripten) Release",
+      "inherits": [
+        "release",
+        "web-default"
+      ],
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": {
+          "type": "BOOL",
+          "value": false
+        }
+      }
+    },
+    {
       "name": "android-base",
       "hidden": true,
       "generator": "Ninja",
@@ -695,6 +710,15 @@
       "configurePreset": "web-default-debug",
       "description": "Web (Emscripten) debug build",
       "displayName": "Web (Emscripten) Debug",
+      "targets": [
+        "dusklight"
+      ]
+    },
+    {
+      "name": "web-default-release",
+      "configurePreset": "web-default-release",
+      "description": "Web (Emscripten) production build",
+      "displayName": "Web (Emscripten) Release",
       "targets": [
         "dusklight"
       ]

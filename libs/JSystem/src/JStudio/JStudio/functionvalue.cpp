@@ -251,7 +251,9 @@ f64 TFunctionValue_composite::getValue(f64 arg1) {
     ASSERT(!refer_isReferring(this));
     ASSERT(pfn_ != NULL);
 
-    return pfn_(arg1, container, data_getData());
+    // pfn_ is called with its true CompositeFunc signature: the referred
+    // function-value container, the operation data, then the parameter.
+    return pfn_(*container, *data_getData(), arg1);
 }
 
 f64 TFunctionValue_composite::composite_raw(TVector_pointer<TFunctionValue*> const& param_1,

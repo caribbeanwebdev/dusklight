@@ -36,6 +36,8 @@ int fpcEx_Execute(base_process_class* i_proc) {
     return fpcBs_Execute(i_proc);
 }
 
+static int fpcEx_ToLineQIt(void* i_proc, void* i_data); // 2-arg adapter, see below
+
 int fpcEx_ToLineQ(base_process_class* i_proc) {
     base_process_class* process = &i_proc->layer_tag.layer->process_node->base;
 
@@ -54,7 +56,7 @@ int fpcEx_ToLineQ(base_process_class* i_proc) {
 
         i_proc->state.init_state = 2;
         if (fpcBs_Is_JustOfType(g_fpcNd_type, i_proc->subtype)) {
-            fpcLyIt_OnlyHere(&((process_node_class*)i_proc)->layer, (fpcLyIt_OnlyHereFunc)fpcEx_ToLineQ, i_proc);
+            fpcLyIt_OnlyHere(&((process_node_class*)i_proc)->layer, fpcEx_ToLineQIt, i_proc);
         }
 
         return 1;
@@ -84,4 +86,11 @@ int fpcEx_ToExecuteQ(base_process_class* i_proc) {
 
 void fpcEx_Handler(fpcLnIt_QueueFunc i_queueFunc) {
     fpcLnIt_Queue(i_queueFunc);
+}
+
+// The layer iterator dispatch invokes with (process, data); calling the 1-arg
+// function through the casted type traps on wasm.
+static int fpcEx_ToLineQIt(void* i_proc, void* i_data) {
+    (void)i_data;
+    return fpcEx_ToLineQ((base_process_class*)i_proc);
 }

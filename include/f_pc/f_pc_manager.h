@@ -100,6 +100,10 @@ inline process_node_class* fpcM_Layer(void* i_process) {
 }
 
 void fpcM_Draw(void* i_process);
+// Adapter for the 2-arg iterator callback types (fpcM_DrawIteraterFunc /
+// fpcDw_HandlerFunc). Calling fpcM_Draw through those casted types is UB and
+// traps on wasm (call_indirect validates signatures).
+int fpcM_DrawIt(void* i_process, void* i_data);
 int fpcM_DrawIterater(fpcM_DrawIteraterFunc i_drawIterFunc);
 int fpcM_Execute(void* i_process);
 int fpcM_Delete(void* i_process);

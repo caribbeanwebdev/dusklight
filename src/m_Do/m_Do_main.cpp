@@ -305,7 +305,7 @@ void main01(void) {
             dusk::frame_interp::interpolate();
             dusk::frame_interp::begin_presentation_camera();
             // run draw functions for anything specially marked to handle interp
-            fpcM_DrawIterater((fpcM_DrawIteraterFunc)fpcM_Draw);
+            fpcM_DrawIterater(fpcM_DrawIt);
             cAPIGph_Painter();
             dusk::frame_interp::end_presentation_camera();
             dusk::frame_interp::set_ui_tick_pending(false);

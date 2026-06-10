@@ -189,8 +189,6 @@ public:
             f64 f32data;
         };
     };
-    typedef f64 (*UnkFunc)(f64, const TFunctionValueAttribute_refer*,
-                           const TFunctionValue_composite::TData*);
     typedef f64 (*CompositeFunc)(const JGadget::TVector_pointer<TFunctionValue*>&,
                                  const TFunctionValue_composite::TData&, f64);
 
@@ -215,14 +213,17 @@ public:
                                          f64);
 
     void data_set(CompositeFunc fn, const TData& dat) {
-        pfn_ = (UnkFunc)fn;
+        // No cast here: storing/calling this through a different function
+        // signature is UB and traps wasm's call_indirect signature check
+        // (it only "worked" natively by ABI accident).
+        pfn_ = fn;
         data_setData(dat);
     }
     const TData* data_getData() const { return &data; }
     void data_setData(const TData& dat) { data = dat; }
 
 // private:
-    UnkFunc pfn_;
+    CompositeFunc pfn_;
     TData data;
 };
 

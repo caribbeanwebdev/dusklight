@@ -120,13 +120,20 @@ BOOL fpcCtRq_Do(create_request* i_request) {
     return 1;
 }
 
+// 2-arg adapter: the create iterator dispatch invokes with (request, data);
+// calling the 1-arg function through the casted type traps on wasm.
+static int fpcCtRq_DoIt(void* i_request, void* i_data) {
+    (void)i_data;
+    return fpcCtRq_Do((create_request*)i_request);
+}
+
 int fpcCtRq_Handler() {
 #if DEBUG
     if (g_fpcDbSv_service[3] != NULL) {
         g_fpcDbSv_service[3](&g_fpcCtTg_Queue.mSize);
     }
 #endif
-    return fpcCtIt_Method((fpcCtIt_MethodFunc)fpcCtRq_Do, NULL);
+    return fpcCtIt_Method(fpcCtRq_DoIt, NULL);
 }
 
 create_request* fpcCtRq_Create(layer_class* i_layer, u32 i_size, create_request_method_class* i_methods) {

@@ -35,6 +35,19 @@ int fpcM_Execute(void* i_proc) {
     return fpcEx_Execute((base_process_class*)i_proc);
 }
 
+int fpcM_DrawIt(void* i_proc, void* i_data) {
+    (void)i_data;
+    fpcM_Draw(i_proc);
+    return 0;
+}
+
+// See fpcM_DrawIt: 2-arg adapter so the call through fpcLnIt_QueueFunc has a
+// matching wasm signature.
+static int fpcM_ExecuteIt(void* i_proc, void* i_data) {
+    (void)i_data;
+    return fpcM_Execute(i_proc);
+}
+
 int fpcM_Delete(void* i_proc) {
     return fpcDt_Delete((base_process_class*)i_proc);
 }
@@ -90,11 +103,11 @@ void fpcM_Management(fpcM_ManagementFunc i_preExecuteFn, fpcM_ManagementFunc i_p
             }
 
             if (!fapGm_HIO_c::isCaptureScreen()) {
-                fpcEx_Handler((fpcLnIt_QueueFunc)fpcM_Execute);
+                fpcEx_Handler(fpcM_ExecuteIt);
             }
 
             if (!fapGm_HIO_c::isCaptureScreen() || fapGm_HIO_c::getCaptureScreenDivH() != 1) {
-                fpcDw_Handler((fpcDw_HandlerFuncFunc)fpcM_DrawIterater, (fpcDw_HandlerFunc)fpcM_Draw);
+                fpcDw_Handler((fpcDw_HandlerFuncFunc)fpcM_DrawIterater, fpcM_DrawIt);
             }
 
             if (i_postExecuteFn != NULL) {

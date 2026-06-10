@@ -63,6 +63,13 @@ int fpcNd_Execute(process_node_class* i_procNode) {
 
 int g_fpcNd_type;
 
+// 2-arg adapter: fpcLyIt_JudgeFunc is called with (node, data); calling the
+// 1-arg function through that casted type traps on wasm.
+static void* fpcNd_IsCreatingFromUnderIt(void* i_procNode, void* i_data) {
+    (void)i_data;
+    return fpcNd_IsCreatingFromUnder(i_procNode);
+}
+
 void* fpcNd_IsCreatingFromUnder(void* i_procNode) {
     if (i_procNode != NULL && fpcBs_Is_JustOfType(g_fpcNd_type, ((process_node_class*)i_procNode)->base.subtype) != FALSE)
     {
@@ -70,7 +77,7 @@ void* fpcNd_IsCreatingFromUnder(void* i_procNode) {
         layer = &((process_node_class*)i_procNode)->layer;
         if (fpcLy_IsCreatingMesg(layer) == FALSE) {
             return (process_node_class*)fpcLyIt_Judge(
-                layer, (fpcLyIt_JudgeFunc)fpcNd_IsCreatingFromUnder, NULL);
+                layer, fpcNd_IsCreatingFromUnderIt, NULL);
         } else {
             return i_procNode;
         }

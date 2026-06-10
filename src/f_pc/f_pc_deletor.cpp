@@ -60,6 +60,8 @@ int fpcDt_ToQueue(base_process_class* i_proc) {
     return 0;
 }
 
+static int fpcDt_ToDeleteQIt(void* i_proc, void* i_data); // 2-arg adapter, see below
+
 int fpcDt_ToDeleteQ(base_process_class* i_proc) {
     if (i_proc->unk_0xA == 1) {
         return 0;
@@ -80,7 +82,7 @@ int fpcDt_ToDeleteQ(base_process_class* i_proc) {
             JUT_ASSERT(196, FALSE);
         }
 
-        if (fpcLyIt_OnlyHereLY(layer, (fpcLyIt_OnlyHereFunc)fpcDt_ToDeleteQ, NULL) == 0)
+        if (fpcLyIt_OnlyHereLY(layer, fpcDt_ToDeleteQIt, NULL) == 0)
         {
             return 0;
         }
@@ -133,4 +135,11 @@ int fpcDt_Delete(void* i_proc) {
     }
 
     return 1;
+}
+
+// The layer iterator dispatch invokes with (process, data); calling the 1-arg
+// function through the casted type traps on wasm.
+static int fpcDt_ToDeleteQIt(void* i_proc, void* i_data) {
+    (void)i_data;
+    return fpcDt_ToDeleteQ((base_process_class*)i_proc);
 }

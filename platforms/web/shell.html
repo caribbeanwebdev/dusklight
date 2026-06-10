@@ -381,6 +381,19 @@
       .save-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .save-row .size { color: var(--dim); font-size: 12px; white-space: nowrap; }
 
+      /* ---------- Footer ---------- */
+      footer.credits {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+        color: var(--dim);
+        font-size: 13px;
+        text-align: center;
+        line-height: 1.7;
+      }
+      footer.credits a { color: var(--text); text-decoration: none; }
+      footer.credits a:hover { color: var(--gold); }
+
       /* ---------- Log ---------- */
       details#log-panel { margin-top: 14px; }
       details#log-panel summary { cursor: pointer; color: var(--dim); font-size: 13px; user-select: none; }
@@ -408,7 +421,7 @@
       <header>
         <h1>Dusklight</h1>
         <span>web build</span>
-        <a href="https://github.com/TwilitRealm/dusklight" target="_blank" rel="noopener">GitHub &nearr;</a>
+        <a href="https://github.com/caribbeanwebdev/dusklight" target="_blank" rel="noopener">GitHub &nearr;</a>
       </header>
 
       <div id="disclaimer">
@@ -467,6 +480,14 @@
         <summary>Log</summary>
         <pre id="log"></pre>
       </details>
+
+      <footer class="credits">
+        Web port of <a href="https://github.com/TwilitRealm/dusklight" target="_blank" rel="noopener">Dusklight</a>
+        &mdash; original work by the <a href="https://twilitrealm.dev" target="_blank" rel="noopener">TwilitRealm team</a>.<br>
+        Built on the <a href="https://github.com/zeldaret/tp" target="_blank" rel="noopener">Twilight Princess decompilation</a>
+        and powered by <a href="https://github.com/encounter/aurora" target="_blank" rel="noopener">Aurora</a>.
+        The Legend of Zelda is a trademark of Nintendo; this project is not affiliated with or endorsed by Nintendo.
+      </footer>
     </div>
 
     <!-- ============ Controls modal ============ -->

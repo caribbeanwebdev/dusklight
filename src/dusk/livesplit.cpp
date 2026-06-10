@@ -1,4 +1,6 @@
-#if _WIN32
+#ifdef __EMSCRIPTEN__
+    // Browsers have no raw TCP sockets; the LiveSplit client is stubbed below.
+#elif _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
     using socket_t = SOCKET;
@@ -52,8 +54,17 @@ namespace dusk::speedrun {
 static bool     running           = false;
 static bool     startPending      = false;
 static uint64_t frameCount        = 0;
-static socket_t sock              = INVALID_SOCKET;
 static bool     wasLoading        = false;
+
+#ifdef __EMSCRIPTEN__
+
+// No TCP from the browser: keep the frame counting (used by the in-game
+// timer) but make every network operation a no-op.
+static void sendCmd(const char*) {}
+
+#else
+
+static socket_t sock              = INVALID_SOCKET;
 static bool     connected         = false;
 static bool     connectPending    = false;
 static bool     disconnectPending = false;
@@ -100,6 +111,8 @@ static void sendCmd(const char* cmd) {
     reconnectCounter = 0;
 }
 
+#endif  // __EMSCRIPTEN__
+
 uint64_t getFrameCount() {
     return frameCount;
 }
@@ -139,6 +152,17 @@ void reset() {
     wasLoading = false;
     sendCmd("reset");
 }
+
+#ifdef __EMSCRIPTEN__
+
+void connectLiveSplit(const char*, int) {}
+void disconnectLiveSplit() {}
+bool consumeConnectedEvent()    { return false; }
+bool consumeDisconnectedEvent() { return false; }
+void updateLiveSplit() {}
+void shutdown() {}
+
+#else
 
 static void reconnect() {
     if (sock != INVALID_SOCKET) {
@@ -298,5 +322,7 @@ void shutdown() {
     WSACleanup();
 #endif
 }
+
+#endif  // __EMSCRIPTEN__
 
 }

@@ -153,6 +153,24 @@ if (ENABLE_ASAN)
     message(STATUS "dusklight: Enabled AddressSanitizer")
 endif ()
 
+if (EMSCRIPTEN)
+    # Threads and exceptions must be enabled globally (compile + link) so that
+    # aurora and all FetchContent dependencies inherit them.
+    # -Wno-multichar/-Wno-trigraphs/-Wno-deprecated-declarations: same rationale
+    #   as the Linux block below; Emscripten reports CMAKE_SYSTEM_NAME=Emscripten,
+    #   so it never hits that branch.
+    add_compile_options(-pthread -fwasm-exceptions -sSUPPORT_LONGJMP=wasm
+            -Wno-multichar -Wno-trigraphs -Wno-deprecated-declarations)
+    # Emscripten's libc++ does not pull in malloc/free transitively through <new>
+    # or <string> the way other stdlibs do; fmt 11.x (among others) relies on that.
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include cstdlib>")
+    # Guard for the web target: flags function-pointer casts whose wasm-level
+    # signature differs (call_indirect traps on those at runtime). The initial
+    # sweep fixed all reachable mismatches; this keeps new ones from sneaking in.
+    add_compile_options(-Wcast-function-type-strict)
+    add_link_options(-pthread -fwasm-exceptions -sSUPPORT_LONGJMP=wasm)
+endif ()
+
 if (CMAKE_SYSTEM_NAME STREQUAL Linux)
   set(DAWN_USE_WAYLAND ON CACHE BOOL "Enable support for Wayland surface" FORCE)
 endif ()
@@ -210,6 +228,9 @@ if (DUSK_MOVIE_SUPPORT)
             -DWITH_TURBOJPEG=ON
             -DWITH_JAVA=OFF
         )
+        if (EMSCRIPTEN)
+            list(APPEND _jpeg_cmake_args -DWITH_SIMD=OFF)
+        endif ()
         if (CMAKE_TOOLCHAIN_FILE)
             get_filename_component(_jpeg_toolchain_file "${CMAKE_TOOLCHAIN_FILE}" ABSOLUTE BASE_DIR "${CMAKE_SOURCE_DIR}")
             list(APPEND _jpeg_cmake_args -DCMAKE_TOOLCHAIN_FILE=${_jpeg_toolchain_file})
@@ -343,8 +364,10 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL Darwin)
     else ()
         set(PLATFORM_NAME macos)
     endif ()
+elseif (EMSCRIPTEN)
+    set(PLATFORM_NAME web)
 else ()
-    string(TOLOWER CMAKE_SYSTEM_NAME PLATFORM_NAME)
+    string(TOLOWER ${CMAKE_SYSTEM_NAME} PLATFORM_NAME)
 endif ()
 
 configure_file(${CMAKE_SOURCE_DIR}/version.h.in ${CMAKE_BINARY_DIR}/version.h)
@@ -442,7 +465,7 @@ if (DEFINED DUSK_ENABLE_DISCORD_RPC AND NOT DEFINED DUSK_ENABLE_DISCORD)
     set(DUSK_ENABLE_DISCORD_DEFAULT ${DUSK_ENABLE_DISCORD_RPC})
 endif ()
 option(DUSK_ENABLE_DISCORD "Enable Discord Rich Presence support" ${DUSK_ENABLE_DISCORD_DEFAULT})
-if (DUSK_ENABLE_DISCORD AND NOT ANDROID AND NOT IOS AND NOT TVOS)
+if (DUSK_ENABLE_DISCORD AND NOT ANDROID AND NOT IOS AND NOT TVOS AND NOT EMSCRIPTEN)
     list(APPEND GAME_COMPILE_DEFS DUSK_DISCORD=1)
 endif ()
 
@@ -544,7 +567,25 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
     target_link_options(dusklight PRIVATE "-Wl,--build-id=sha1")
 endif ()
 
-if (NOT APPLE)
+if (EMSCRIPTEN)
+    set_target_properties(dusklight PROPERTIES SUFFIX ".html")
+    target_link_options(dusklight PRIVATE
+        --use-port=emdawnwebgpu -sJSPI -sPROXY_TO_PTHREAD
+        -sOFFSCREENCANVAS_SUPPORT "-sOFFSCREENCANVASES_TO_PTHREAD=#canvas"
+        -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=536870912 -sMAXIMUM_MEMORY=4294967296
+        -sSTACK_SIZE=8388608 -sDEFAULT_PTHREAD_STACK_SIZE=2097152 -sPTHREAD_POOL_SIZE=16
+        -sINVOKE_RUN=0 "-sEXPORTED_RUNTIME_METHODS=callMain,FS,IDBFS,ccall"
+        # IDBFS backs the user-data dir so saves/config persist across reloads.
+        -lidbfs.js
+        -sASSERTIONS=1 -sEXIT_RUNTIME=0
+        "--shell-file=${CMAKE_SOURCE_DIR}/platforms/web/shell.html"
+        "--preload-file=${CMAKE_SOURCE_DIR}/res@/res")
+    set_property(TARGET dusklight APPEND PROPERTY LINK_DEPENDS ${CMAKE_SOURCE_DIR}/platforms/web/shell.html)
+    # Bridge for the on-screen touch controls of the web shell.
+    target_sources(dusklight PRIVATE src/dusk/web_input.cpp)
+endif ()
+
+if (NOT APPLE AND NOT EMSCRIPTEN)
     add_custom_command(TARGET dusklight POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_SOURCE_DIR}/res"
@@ -687,7 +728,7 @@ else()
     install(TARGETS ${BINARY_TARGETS} ${EXTRA_TARGETS} DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
 aurora_install_runtime_dlls(dusklight ${CMAKE_INSTALL_PREFIX})
-if (NOT APPLE)
+if (NOT APPLE AND NOT EMSCRIPTEN)
     if (DUSK_PACKAGE_INSTALL)
         install(DIRECTORY ${CMAKE_SOURCE_DIR}/res DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dusklight)
     else()
@@ -708,7 +749,7 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo 
             if (NOT target_prefix STREQUAL "")
                 install(CODE "execute_process(WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND mv \"${target_prefix}$<TARGET_FILE_NAME:${target}>.dSYM\" .)")
             endif ()
-        elseif (UNIX)
+        elseif (UNIX AND NOT EMSCRIPTEN)
             get_target_prefix(${target} target_prefix)
             install(CODE "execute_process(WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND objcopy --only-keep-debug \"${target_prefix}$<TARGET_FILE_NAME:${target}>\" \"${target_prefix}$<TARGET_FILE_NAME:${target}>.dbg\")")
             install(CODE "execute_process(WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND objcopy --strip-debug --add-gnu-debuglink=$<TARGET_FILE_NAME:${target}>.dbg \"${target_prefix}$<TARGET_FILE_NAME:${target}>\")")
@@ -726,7 +767,7 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo 
             list(TRANSFORM DEBUG_FILES_LIST APPEND ".dSYM")
             list(JOIN DEBUG_FILES_LIST " " DEBUG_FILES)
             install(CODE "execute_process(WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND tar acfv \"${CMAKE_INSTALL_PREFIX}/debug.tar.xz\" ${DEBUG_FILES})")
-        elseif (UNIX)
+        elseif (UNIX AND NOT EMSCRIPTEN)
             list(TRANSFORM DEBUG_FILES_LIST APPEND ".dbg")
             list(JOIN DEBUG_FILES_LIST " " DEBUG_FILES)
             install(CODE "execute_process(WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND tar -I \"xz -9 -T0\" -cvf \"${CMAKE_INSTALL_PREFIX}/debug.tar.xz\" ${DEBUG_FILES})")

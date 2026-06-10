@@ -211,6 +211,23 @@ Alternate presets available:
 * `windows-clang-relwithdebinfo`: Clang-cl, RelWithDebInfo
 * `windows-clang-debug`: Clang-cl, Debug
 
+**ninja (Web/Emscripten)**
+
+Requires [emsdk](https://github.com/emscripten-core/emsdk) 4.0.10+, installed and activated, with `EMSDK` exported in the environment:
+
+```sh
+source ~/emsdk/emsdk_env.sh
+```
+
+```sh
+cmake --preset web-default
+cmake --build --preset web-default
+```
+
+Alternate presets available:
+
+* `web-default-debug`: Emscripten, Debug
+
 ## Running
 
 **Windows / Linux**
@@ -230,3 +247,14 @@ macOS builds an `.app` bundle which contains the executable and all necessary re
 ```sh
 build/{preset}/Dusklight.app/Contents/MacOS/Dusklight --dvd /path/to/game.iso
 ```
+
+**Web**
+
+* Serve the build directory with the bundled helper, which sends the COOP/COEP headers required for cross-origin isolation (SharedArrayBuffer):
+
+```sh
+python3 tools/serve-web.py 8080 build/web-default
+```
+
+* Open http://localhost:8080/dusklight.html in a current version of Chrome, select the disc image and press `Play`. Supported formats are: ISO (GCM), CISO. RVZ, WIA, GCZ and WBFS are **not** supported on web.
+* Requires a browser with WebGPU support and a cross-origin isolated page (the helper server takes care of the latter).

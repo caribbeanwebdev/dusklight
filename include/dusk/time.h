@@ -23,6 +23,12 @@
 #include <immintrin.h>
 #endif
 #endif
+#ifdef __EMSCRIPTEN__
+#include <algorithm>
+#include <pthread.h>
+#include <emscripten/emscripten.h>
+#include <emscripten/threading.h>
+#endif
 
 class Limiter {
 public:
@@ -72,7 +78,17 @@ private:
 
   duration_t TimeSince(Uint64 start) const { return SDL_GetTicksNS() - start; }
 
-#if _WIN32
+#ifdef __EMSCRIPTEN__
+  void NanoSleep(const duration_t duration) {
+    // Suspend via JSPI and yield to the worker's event loop. This is what
+    // presents the frame and lets WebGPU/MapAsync callbacks progress, so it
+    // must never block or spin. With -sJSPI every pthread entry (including the
+    // PROXY_TO_PTHREAD main) is suspendable; under PROXY_TO_PTHREAD the app
+    // main thread is NOT emscripten_main_runtime_thread_id() (that is the
+    // browser thread), so do not gate on that.
+    emscripten_sleep(std::max<uint64_t>(1, duration / 1'000'000ULL));
+  }
+#elif _WIN32
   void NanoSleep(const duration_t duration) {
     static bool initialized = false;
     static double countPerNs;

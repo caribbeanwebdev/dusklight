@@ -7,6 +7,10 @@
 #ifndef _comb_
 #define _comb_
 
+#if defined(__wasm__)
+#include <cmath>
+#endif
+
 
 class comb
 {
@@ -37,6 +41,11 @@ inline float comb::process(float input)
 	float output = buffer[bufidx];
 
 	filterstore = (output*damp2) + (filterstore*damp1);
+#if defined(__wasm__)
+	// No FTZ/DAZ on wasm (see denormals.h): flush the recursive filter state
+	// manually so denormals don't make the reverb crawl.
+	if (std::fabs(filterstore) < 1e-15f) filterstore = 0.0f;
+#endif
 	buffer[bufidx] = input + (filterstore*feedback);
 
 	if(++bufidx>=bufsize) bufidx = 0;

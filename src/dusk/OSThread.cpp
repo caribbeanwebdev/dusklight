@@ -26,6 +26,9 @@
 #include <windows.h>
 #elif __APPLE__
 #include <pthread.h>
+#elif defined(__EMSCRIPTEN__)
+#include <pthread.h>
+#include <emscripten/threading.h>
 #endif
 
 // ============================================================================
@@ -690,6 +693,10 @@ void OSSetCurrentThreadName(const char* name) {
     }
 #elif __APPLE__
     pthread_setname_np(name);
+#elif defined(__EMSCRIPTEN__)
+    // Names the backing worker in browser devtools. Thread priorities are
+    // bookkeeping-only here, so nothing else to do on web.
+    emscripten_set_thread_name(pthread_self(), name);
 #endif
 #endif
 }

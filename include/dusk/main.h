@@ -13,7 +13,7 @@ extern std::filesystem::path ConfigPath;
 extern std::filesystem::path CachePath;
 
 #if defined(__ANDROID__) || (defined(TARGET_OS_IOS) && TARGET_OS_IOS) ||                           \
-    (defined(TARGET_OS_TV) && TARGET_OS_TV)
+    (defined(TARGET_OS_TV) && TARGET_OS_TV) || defined(__EMSCRIPTEN__)
 inline constexpr bool SupportsProcessRestart = false;
 #else
 inline constexpr bool SupportsProcessRestart = true;

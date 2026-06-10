@@ -275,7 +275,7 @@ void ShowFolderSelect(
         return;
     }
 
-#if USE_IOS_DIALOG
+#if USE_IOS_DIALOG || defined(__EMSCRIPTEN__)
     callback(userdata, nullptr, "Folder selection is not supported on this platform");
 #elif USE_MACOS_FOLDER_DIALOG
     ShowMacOSFolderSelect(callback, userdata, window, default_location);

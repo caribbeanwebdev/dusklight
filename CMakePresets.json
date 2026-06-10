@@ -375,6 +375,46 @@
       }
     },
     {
+      "name": "web-default",
+      "displayName": "Web (Emscripten)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "inherits": [
+        "relwithdebinfo"
+      ],
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install",
+        "BUILD_SHARED_LIBS": {
+          "type": "BOOL",
+          "value": false
+        },
+        "CMAKE_DISABLE_FIND_PACKAGE_PkgConfig": {
+          "type": "BOOL",
+          "value": true
+        },
+        "CMAKE_IGNORE_PREFIX_PATH": "/opt/homebrew;/usr/local",
+        "Rust_CARGO_TARGET": "wasm32-unknown-emscripten",
+        "AURORA_SDL3_PROVIDER": "vendor",
+        "DUSK_MOVIE_SUPPORT": {
+          "type": "BOOL",
+          "value": false
+        },
+        "DUSK_ENABLE_DISCORD": {
+          "type": "BOOL",
+          "value": false
+        }
+      }
+    },
+    {
+      "name": "web-default-debug",
+      "displayName": "Web (Emscripten) Debug",
+      "inherits": [
+        "debug",
+        "web-default"
+      ]
+    },
+    {
       "name": "android-base",
       "hidden": true,
       "generator": "Ninja",
@@ -637,6 +677,24 @@
       "configurePreset": "tvos-default",
       "description": "tvOS release build with debug info",
       "displayName": "tvOS RelWithDebInfo",
+      "targets": [
+        "dusklight"
+      ]
+    },
+    {
+      "name": "web-default",
+      "configurePreset": "web-default",
+      "description": "Web (Emscripten) release build with debug info",
+      "displayName": "Web (Emscripten) RelWithDebInfo",
+      "targets": [
+        "dusklight"
+      ]
+    },
+    {
+      "name": "web-default-debug",
+      "configurePreset": "web-default-debug",
+      "description": "Web (Emscripten) debug build",
+      "displayName": "Web (Emscripten) Debug",
       "targets": [
         "dusklight"
       ]

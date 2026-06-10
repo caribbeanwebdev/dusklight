@@ -15,6 +15,8 @@
 #define DUSK_ARCH "x86"
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #define DUSK_ARCH "arm64"
+#elif defined(__EMSCRIPTEN__) || defined(__wasm__)
+#define DUSK_ARCH "wasm32"
 #endif
 
 #define DUSK_PLATFORM_NAME "@PLATFORM_NAME@"

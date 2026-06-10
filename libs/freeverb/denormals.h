@@ -58,6 +58,14 @@ inline void denormals_restore(denormal_state saved)
     asm volatile("vmsr fpscr, %0" :: "r"(saved));
 }
 
+#elif defined(__wasm__) || defined(__EMSCRIPTEN__)
+
+// WebAssembly has no FTZ/DAZ control register; denormals are flushed manually
+// in the comb/allpass feedback paths instead (see comb.hpp / allpass.hpp).
+using denormal_state = int;
+inline denormal_state denormals_enable() { return 0; }
+inline void denormals_restore(denormal_state) {}
+
 #else
 
 // unknown platform so denormals will be preserved

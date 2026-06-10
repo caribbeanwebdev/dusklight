@@ -4,6 +4,18 @@
 
 #include "dusk/crash_handler.h"
 
+#ifdef __EMSCRIPTEN__
+
+// wasm has no signals/sigaltstack/ucontext, and dladdr/unwind yield nothing
+// useful there; the browser already provides stack traces. No-op on web.
+namespace dusk::crash_handler {
+
+void install() {}
+
+}  // namespace dusk::crash_handler
+
+#else
+
 #include "dusk/logging.h"
 #include "version.h"
 
@@ -963,3 +975,5 @@ void install() {
 }
 
 }  // namespace dusk::crash_handler
+
+#endif  // __EMSCRIPTEN__

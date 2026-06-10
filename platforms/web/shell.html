@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Dusklight</title>
+    <style>
+      :root {
+        --bg: #0c0b0e;
+        --panel: #16141a;
+        --panel-2: #1d1a23;
+        --border: #2b2733;
+        --text: #d8d3c8;
+        --dim: #8b8576;
+        --gold: #c8a24a;
+        --gold-dim: #8a7136;
+        --error: #d06a5a;
+      }
+      * { box-sizing: border-box; }
+      /* The hidden attribute must always win, even over display:flex classes. */
+      [hidden] { display: none !important; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 15px;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: calc(16px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+                 calc(16px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+      }
+      header {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      header h1 {
+        margin: 0;
+        font-size: clamp(18px, 4.5vw, 24px);
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        color: var(--gold);
+        text-transform: uppercase;
+      }
+      header span { color: var(--dim); font-size: 13px; }
+      header a {
+        margin-left: auto;
+        color: var(--dim);
+        font-size: 13px;
+        text-decoration: none;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 12px;
+      }
+      header a:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+      button {
+        font: inherit;
+        border-radius: 6px;
+        cursor: pointer;
+        min-height: 44px;
+      }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      .btn-primary {
+        background: var(--gold);
+        color: #1a1408;
+        border: 0;
+        padding: 10px 34px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 10px 16px;
+      }
+      .btn-ghost:hover:not(:disabled) { border-color: var(--gold-dim); }
+
+      /* ---------- Disclaimer ---------- */
+      #disclaimer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 14px;
+        padding: 12px 16px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--dim);
+        font-size: clamp(13px, 3vw, 15px);
+        text-align: center;
+      }
+      #disclaimer a {
+        color: var(--text);
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      #disclaimer a:hover { color: var(--gold); }
+
+      /* ---------- Landing ---------- */
+      #landing { display: flex; flex-direction: column; gap: 16px; }
+      #dropzone {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: clamp(220px, 38vh, 380px);
+        padding: 28px 18px;
+        border: 2px dashed var(--border);
+        border-radius: 14px;
+        background:
+          radial-gradient(ellipse at 50% 120%, rgba(200, 162, 74, 0.10), transparent 60%),
+          var(--panel);
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.15s, background-color 0.15s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #dropzone:hover, #dropzone.dragover { border-color: var(--gold); }
+      #dropzone.disabled { cursor: default; opacity: 0.6; }
+      #dropzone.has-file { border-style: solid; border-color: var(--gold-dim); }
+      #dz-icon { font-size: clamp(36px, 8vw, 56px); line-height: 1; opacity: 0.9; }
+      #dz-title { font-size: clamp(16px, 3.6vw, 20px); font-weight: 600; }
+      #dz-sub { color: var(--dim); font-size: clamp(12px, 3vw, 14px); }
+      #dz-file {
+        display: none;
+        margin-top: 4px;
+        padding: 6px 14px;
+        border-radius: 6px;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        color: var(--gold);
+        font-size: 13px;
+        max-width: 92%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #dropzone.has-file #dz-file { display: block; }
+      .landing-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      /* ---------- Status / hints ---------- */
+      #status { color: var(--dim); text-align: center; min-height: 1.4em; }
+      #status.error { color: var(--error); }
+      #status b { color: var(--text); font-weight: 600; }
+      progress#copy-progress {
+        width: min(420px, 86%);
+        margin: 0 auto;
+        display: block;
+        accent-color: var(--gold);
+      }
+      .hint { color: var(--dim); font-size: 13px; text-align: center; }
+
+      /* ---------- Game ---------- */
+      #game { display: flex; flex-direction: column; gap: 10px; }
+      #frame {
+        position: relative;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #000;
+        line-height: 0;
+        overflow: hidden;
+      }
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas#canvas {
+        border: 0 none;
+        background-color: #000;
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        height: auto;
+        outline: none;
+      }
+      /* In fullscreen the frame fills the screen; the game supports widescreen
+         (video.lockAspectRatio=false stretches the viewport), so let the canvas
+         fill too. The touch overlay rides along because it lives in the frame. */
+      #frame:fullscreen { border: 0; border-radius: 0; }
+      #frame:fullscreen canvas#canvas {
+        width: 100vw;
+        height: 100vh;
+        aspect-ratio: auto;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      #game-status { flex: 1 1 auto; min-width: 160px; color: var(--dim); }
+      #game-status b { color: var(--text); }
+      .icon-btn {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        min-width: 44px;
+        padding: 8px 12px;
+        font-size: 17px;
+      }
+      .icon-btn.active { border-color: var(--gold); color: var(--gold); }
+      #rotate-hint { display: none; }
+      @media (pointer: coarse) and (orientation: portrait) {
+        #rotate-hint { display: block; }
+      }
+
+      /* ---------- Touch controls overlay ---------- */
+      #touch-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        font-family: inherit;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .t-ctl {
+        position: absolute;
+        pointer-events: auto;
+        touch-action: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 2px solid rgba(200, 162, 74, 0.55);
+        background: rgba(22, 20, 26, 0.35);
+        color: rgba(216, 211, 200, 0.9);
+        font-weight: 700;
+        line-height: normal;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .t-ctl.pressed { background: rgba(200, 162, 74, 0.45); color: #1a1408; }
+      #t-stick-zone {
+        left: 3%;
+        bottom: 6%;
+        width: clamp(96px, 26%, 180px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+      }
+      #t-stick-nub {
+        position: absolute;
+        width: 44%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: rgba(200, 162, 74, 0.5);
+        border: 2px solid rgba(200, 162, 74, 0.8);
+        left: 28%;
+        top: 28%;
+        pointer-events: none;
+      }
+      .t-btn { width: clamp(46px, 11%, 72px); aspect-ratio: 1; font-size: clamp(14px, 2.4vw, 18px); }
+      #t-a { right: 4%; bottom: 14%; width: clamp(56px, 14%, 88px); }
+      #t-b { right: 17%; bottom: 5%; }
+      #t-x { right: 16.5%; bottom: 27%; }
+      #t-y { right: 28%; bottom: 16%; }
+      #t-z { right: 20%; top: 4%; background: rgba(70, 60, 110, 0.45); }
+      #t-cstick-zone {
+        right: 4%;
+        bottom: 42%;
+        width: clamp(72px, 18%, 130px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border-color: rgba(196, 196, 90, 0.5); /* C-stick amarillo, como el control de GC */
+      }
+      #t-cstick-nub {
+        position: absolute;
+        width: 44%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: rgba(196, 196, 90, 0.45);
+        border: 2px solid rgba(196, 196, 90, 0.75);
+        left: 28%;
+        top: 28%;
+        pointer-events: none;
+      }
+
+      #t-l { left: 2.5%; top: 4%; border-radius: 12px; width: clamp(56px, 15%, 96px); aspect-ratio: 2.1; }
+      #t-r { right: 2.5%; top: 4%; border-radius: 12px; width: clamp(56px, 15%, 96px); aspect-ratio: 2.1; }
+      #t-start {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 4%;
+        border-radius: 12px;
+        width: clamp(64px, 16%, 104px);
+        aspect-ratio: 2.6;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+      }
+
+      /* ---------- Modals ---------- */
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        padding: 16px;
+      }
+      .modal {
+        width: min(94vw, 580px);
+        max-height: min(86vh, 720px);
+        display: flex;
+        flex-direction: column;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .modal header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .modal header h2 { margin: 0; font-size: 16px; color: var(--gold); letter-spacing: 0.06em; }
+      .modal-body { padding: 12px 16px; overflow-y: auto; }
+      .modal footer {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+      }
+      .modal-note { color: var(--dim); font-size: 13px; margin: 10px 0 0; }
+      .bind-section { margin: 10px 0 4px; color: var(--gold-dim); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+      .bind-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 7px 4px;
+        border-bottom: 1px solid rgba(43, 39, 51, 0.5);
+      }
+      .bind-row label { flex: 1; }
+      .bind-key {
+        min-width: 130px;
+        min-height: 38px;
+        text-align: center;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        color: var(--gold);
+        border-radius: 6px;
+        padding: 6px 10px;
+        font: 13px ui-monospace, monospace;
+      }
+      .bind-key.capturing { border-color: var(--gold); color: var(--text); animation: pulse 1s infinite; }
+      @keyframes pulse { 50% { background: rgba(200, 162, 74, 0.18); } }
+      .save-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 4px;
+        border-bottom: 1px solid rgba(43, 39, 51, 0.5);
+        font-size: 14px;
+      }
+      .save-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .save-row .size { color: var(--dim); font-size: 12px; white-space: nowrap; }
+
+      /* ---------- Log ---------- */
+      details#log-panel { margin-top: 14px; }
+      details#log-panel summary { cursor: pointer; color: var(--dim); font-size: 13px; user-select: none; }
+      pre#log {
+        margin: 8px 0 0;
+        padding: 10px;
+        max-height: 240px;
+        overflow-y: auto;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--dim);
+        font: 12px/1.5 ui-monospace, monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      @media (max-width: 560px) {
+        .landing-actions button { flex: 1 1 40%; }
+        .bind-key { min-width: 104px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Dusklight</h1>
+        <span>web build</span>
+        <a href="https://github.com/TwilitRealm/dusklight" target="_blank" rel="noopener">GitHub &nearr;</a>
+      </header>
+
+      <div id="disclaimer">
+        <span>You must provide a dump of your own copy of the original game to run Dusklight.</span>
+        <a href="https://wiki.dolphin-emu.org/index.php?title=Ripping_Games" target="_blank" rel="noopener">Learn more &rarr;</a>
+      </div>
+
+      <!-- ============ Landing: visible until Play ============ -->
+      <section id="landing">
+        <div id="dropzone" class="disabled" tabindex="0" role="button" aria-label="Choose a disc image">
+          <div id="dz-icon">&#x1F4BF;</div>
+          <div id="dz-title">Drop your disc image here</div>
+          <div id="dz-sub">or tap to browse &mdash; ISO (GCM) / CISO &middot; GameCube USA &amp; EUR</div>
+          <div id="dz-file"></div>
+          <input type="file" id="disc" accept=".ciso,.iso,.gcm" hidden>
+        </div>
+        <div class="landing-actions">
+          <button id="play" class="btn-primary" disabled>Play</button>
+          <button id="controls-btn" class="btn-ghost" disabled>&#x2328;&#xFE0F; Controls</button>
+          <button id="saves-btn" class="btn-ghost" disabled>&#x1F4BE; Saves</button>
+        </div>
+        <div id="status">Checking browser requirements&hellip;</div>
+        <progress id="copy-progress" max="100" value="0" hidden></progress>
+        <div class="hint">Runs fully in your browser with WebGPU &mdash; nothing is uploaded anywhere.
+          Saves and settings persist on this device.</div>
+      </section>
+
+      <!-- ============ Game: hidden until Play ============ -->
+      <section id="game" hidden>
+        <div id="frame">
+          <canvas id="canvas" width="960" height="720" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+          <div id="touch-overlay" hidden>
+            <div id="t-stick-zone" class="t-ctl"><div id="t-stick-nub"></div></div>
+            <div id="t-cstick-zone" class="t-ctl"><div id="t-cstick-nub"></div></div>
+            <div id="t-l" class="t-ctl t-btn" data-mask="64">L</div>
+            <div id="t-r" class="t-ctl t-btn" data-mask="32">R</div>
+            <div id="t-z" class="t-ctl t-btn" data-mask="16">Z</div>
+            <div id="t-a" class="t-ctl t-btn" data-mask="256">A</div>
+            <div id="t-b" class="t-ctl t-btn" data-mask="512">B</div>
+            <div id="t-x" class="t-ctl t-btn" data-mask="1024">X</div>
+            <div id="t-y" class="t-ctl t-btn" data-mask="2048">Y</div>
+            <div id="t-start" class="t-ctl t-btn" data-mask="4096">START</div>
+          </div>
+        </div>
+        <div class="controls">
+          <div id="game-status"></div>
+          <button id="controls-btn2" class="icon-btn" title="Controls">&#x2328;&#xFE0F;</button>
+          <button id="touch-toggle" class="icon-btn" title="Touch controls">&#x1F4F1;</button>
+          <button id="saves-btn2" class="icon-btn" title="Saves">&#x1F4BE;</button>
+          <button id="fullscreen" class="icon-btn" title="Fullscreen">&#x26F6;</button>
+        </div>
+        <div class="hint" id="rotate-hint">Rotate your device for the best experience.</div>
+      </section>
+
+      <details id="log-panel">
+        <summary>Log</summary>
+        <pre id="log"></pre>
+      </details>
+    </div>
+
+    <!-- ============ Controls modal ============ -->
+    <div id="controls-backdrop" class="backdrop" hidden>
+      <div class="modal" role="dialog" aria-label="Controls">
+        <header>
+          <h2>Keyboard &amp; Mouse</h2>
+          <button class="icon-btn" id="controls-close">&#x2715;</button>
+        </header>
+        <div class="modal-body">
+          <div id="bind-list"></div>
+          <p class="modal-note">Click a binding, then press a key or mouse button. <b>Esc</b> cancels.
+            The mouse always controls the camera and aiming.</p>
+          <p class="modal-note" id="controls-running-note" hidden>The game is running:
+            changes apply the next time the page is reloaded.</p>
+        </div>
+        <footer>
+          <button class="btn-ghost" id="controls-reset">Reset to defaults</button>
+          <button class="btn-primary" id="controls-save">Save</button>
+        </footer>
+      </div>
+    </div>
+    <div id="capture-overlay" class="backdrop" hidden style="z-index: 60; color: var(--text);">
+      Press a key or mouse button&hellip; (Esc to cancel)
+    </div>
+
+    <!-- ============ Saves modal ============ -->
+    <div id="saves-backdrop" class="backdrop" hidden>
+      <div class="modal" role="dialog" aria-label="Saves">
+        <header>
+          <h2>Save Data</h2>
+          <button class="icon-btn" id="saves-close">&#x2715;</button>
+        </header>
+        <div class="modal-body">
+          <div id="saves-list"></div>
+          <p class="modal-note">Save data lives in this browser's storage (IndexedDB) and survives reloads.
+            Download a <code>.gci</code> to back it up or move it to another device, or import one to replace
+            the current save. Imported saves load on the next launch.</p>
+        </div>
+        <footer>
+          <input type="file" id="save-import-input" accept=".gci" hidden>
+          <button class="btn-ghost" id="save-import">Import .gci&hellip;</button>
+        </footer>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      'use strict';
+      var canvasElement = document.getElementById('canvas');
+      var statusElement = document.getElementById('status');
+      var gameStatusElement = document.getElementById('game-status');
+      var progressElement = document.getElementById('copy-progress');
+      var discElement = document.getElementById('disc');
+      var dropzone = document.getElementById('dropzone');
+      var playElement = document.getElementById('play');
+      var fullscreenElement = document.getElementById('fullscreen');
+      var logElement = document.getElementById('log');
+
+      var runtimeReady = false;
+      var started = false;
+      var failed = false;
+      var selectedFile = null;
+
+      var USER_DIR = '/libsdl/TwilitRealm/Dusklight';
+
+      function appendLog(text) {
+        logElement.textContent += text + '\n';
+        if (logElement.textContent.length > 262144) {
+          logElement.textContent = logElement.textContent.slice(-131072);
+        }
+        logElement.scrollTop = logElement.scrollHeight;
+      }
+
+      function setStatusText(html, isError) {
+        statusElement.innerHTML = html;
+        statusElement.classList.toggle('error', !!isError);
+        gameStatusElement.innerHTML = html;
+      }
+
+      function showError(html) {
+        failed = true;
+        progressElement.hidden = true;
+        updateControls();
+        setStatusText(html, true);
+        document.getElementById('log-panel').open = true;
+      }
+
+      function updateControls() {
+        dropzone.classList.toggle('disabled', failed || started || !runtimeReady);
+        playElement.disabled = failed || started || !(runtimeReady && selectedFile);
+        document.getElementById('controls-btn').disabled = failed;
+        document.getElementById('saves-btn').disabled = failed || !runtimeReady;
+      }
+
+      // ---------- Browser requirements ----------
+      function checkRequirements() {
+        if (!navigator.gpu) {
+          showError('<b>WebGPU is not available.</b> Use a current version of Chrome or Edge ' +
+                    '(and make sure WebGPU is not disabled in the browser flags).');
+          return false;
+        }
+        if (!window.crossOriginIsolated) {
+          showError('<b>This page is not cross-origin isolated</b>, so SharedArrayBuffer is unavailable. ' +
+                    'Serve the build with <code>python3 tools/serve-web.py</code> (it sends the required ' +
+                    'COOP/COEP headers) and open it via <code>http://localhost</code> or HTTPS.');
+          return false;
+        }
+        return true;
+      }
+
+      if (checkRequirements()) {
+        setStatusText('Loading runtime&hellip;');
+      }
+
+      // =====================================================================
+      // Key bindings: model + KBND v3 serializer (matches aurora pad.cpp).
+      // =====================================================================
+      var BUTTON_IDS = [0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x0010, 0x0040, 0x0020, 0x0008, 0x0004, 0x0001, 0x0002];
+      var AXIS_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+      var DEFAULT_BUTTONS = [44, -2, 8, 20, 40, 43, -4, 225, 82, 81, 80, 79]; // A,B,X,Y,Start,Z,L,R,DUp,DDown,DLeft,DRight
+      var DEFAULT_AXES = [7, 4, 26, 22, -1, -1, -1, -1, -4, 225]; // LX+,LX-,LY+,LY-,RX+,RX-,RY+,RY-,TrigL,TrigR
+      var BINDINGS_KEY = 'dusklight.bindings.v1';
+
+      function loadBindings() {
+        try {
+          var raw = localStorage.getItem(BINDINGS_KEY);
+          if (raw) {
+            var b = JSON.parse(raw);
+            if (Array.isArray(b.buttons) && b.buttons.length === 12 &&
+                Array.isArray(b.axes) && b.axes.length === 10) {
+              return b;
+            }
+          }
+        } catch (e) { /* corrupted -> defaults */ }
+        return { buttons: DEFAULT_BUTTONS.slice(), axes: DEFAULT_AXES.slice() };
+      }
+      var bindings = loadBindings();
+
+      function buildKbnd(b) {
+        var buf = new ArrayBuffer(740);
+        var v = new DataView(buf);
+        v.setUint8(0, 0x4B); v.setUint8(1, 0x42); v.setUint8(2, 0x4E); v.setUint8(3, 0x44); // "KBND"
+        v.setInt32(4, 3, true);
+        var off = 32;
+        for (var port = 0; port < 4; port++) {
+          var active = port === 0;
+          v.setUint8(off, active ? 1 : 0); off += 1;
+          for (var i = 0; i < 12; i++) {
+            v.setInt32(off, active ? b.buttons[i] : -1, true);
+            v.setUint16(off + 4, BUTTON_IDS[i], true);
+            off += 8;
+          }
+          for (var j = 0; j < 10; j++) {
+            v.setInt32(off, active ? b.axes[j] : -1, true);
+            v.setUint16(off + 4, AXIS_IDS[j], true);
+            v.setInt16(off + 6, 0, true);
+            off += 8;
+          }
+        }
+        return new Uint8Array(buf);
+      }
+
+      // SDL scancodes are USB HID codes; KeyboardEvent.code maps onto them.
+      var CODE_TO_SCANCODE = (function () {
+        var m = {
+          Enter: 40, Escape: 41, Backspace: 42, Tab: 43, Space: 44,
+          Minus: 45, Equal: 46, BracketLeft: 47, BracketRight: 48, Backslash: 49,
+          Semicolon: 51, Quote: 52, Backquote: 53, Comma: 54, Period: 55, Slash: 56,
+          CapsLock: 57, PrintScreen: 70, ScrollLock: 71, Pause: 72, Insert: 73,
+          Home: 74, PageUp: 75, Delete: 76, End: 77, PageDown: 78,
+          ArrowRight: 79, ArrowLeft: 80, ArrowDown: 81, ArrowUp: 82,
+          ControlLeft: 224, ShiftLeft: 225, AltLeft: 226, MetaLeft: 227,
+          ControlRight: 228, ShiftRight: 229, AltRight: 230, MetaRight: 231,
+        };
+        for (var i = 0; i < 26; i++) m['Key' + String.fromCharCode(65 + i)] = 4 + i;
+        for (var d = 1; d <= 9; d++) m['Digit' + d] = 29 + d;
+        m['Digit0'] = 39;
+        for (var f = 1; f <= 12; f++) m['F' + f] = 57 + f;
+        return m;
+      })();
+      var SCANCODE_NAMES = (function () {
+        var names = { '-1': '—', '-2': 'Left Click', '-3': 'Middle Click', '-4': 'Right Click', '-5': 'Mouse 4', '-6': 'Mouse 5' };
+        for (var code in CODE_TO_SCANCODE) {
+          names[CODE_TO_SCANCODE[code]] = code
+            .replace(/^Key/, '').replace(/^Digit/, '')
+            .replace(/^Arrow/, '').replace('Left', ' Left').replace('Right', ' Right')
+            .trim();
+        }
+        names[44] = 'Space'; names[40] = 'Enter'; names[43] = 'Tab';
+        return names;
+      })();
+      function scancodeName(sc) { return SCANCODE_NAMES[sc] || ('scan ' + sc); }
+
+      // =====================================================================
+      // Persistence: the user-data dir is backed by IndexedDB (IDBFS).
+      // =====================================================================
+      function ensureDir(path) {
+        var parts = path.split('/').filter(Boolean);
+        var cur = '';
+        for (var i = 0; i < parts.length; i++) {
+          cur += '/' + parts[i];
+          try { Module.FS.mkdir(cur); } catch (e) { /* exists */ }
+        }
+      }
+
+      var persistenceReady = false;
+      function setupPersistence() {
+        return new Promise(function (resolve) {
+          try {
+            ensureDir(USER_DIR);
+            Module.FS.mount(Module.IDBFS, {}, USER_DIR);
+            Module.FS.syncfs(true, function (err) {
+              if (err) console.error('IDBFS populate failed:', err);
+              persistenceReady = !err;
+              resolve();
+            });
+          } catch (e) {
+            console.error('IDBFS mount failed:', e);
+            resolve();
+          }
+        });
+      }
+      function persist() {
+        if (!persistenceReady) return;
+        try { Module.FS.syncfs(false, function (err) { if (err) console.error('syncfs:', err); }); } catch (e) {}
+      }
+      setInterval(persist, 15000);
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') persist();
+      });
+
+      function seedUserData() {
+        ensureDir(USER_DIR);
+        // Bindings: the page modal is the source of truth for the web build.
+        Module.FS.writeFile(USER_DIR + '/keyboard_bindings.dat', buildKbnd(bindings));
+        // Config: only seed on first run so in-game settings changes persist.
+        var hasConfig = false;
+        try { Module.FS.stat(USER_DIR + '/config.json'); hasConfig = true; } catch (e) {}
+        if (!hasConfig) {
+          Module.FS.writeFile(USER_DIR + '/config.json', JSON.stringify({
+            'backend.wasPresetChosen': true,
+            'backend.isoVerification': 0,
+            'game.enableMouseAim': true,
+            'game.enableMouseCamera': true
+          }));
+        }
+      }
+
+      // =====================================================================
+      // Emscripten module
+      // =====================================================================
+      var Module = {
+        canvas: canvasElement,
+        print(...args) {
+          console.log(...args);
+          appendLog(args.join(' '));
+        },
+        printErr(...args) {
+          console.error(...args);
+          appendLog(args.join(' '));
+        },
+        onRuntimeInitialized() {
+          if (failed) return;
+          setupPersistence().then(function () {
+            runtimeReady = true;
+            setStatusText('Waiting for a disc image&hellip; pick an ISO/CISO and press <b>Play</b>.');
+            updateControls();
+          });
+        },
+        onAbort(what) {
+          showError('<b>Runtime aborted:</b> ' + what + ' &mdash; see the log below.');
+        },
+        setStatus(text) {
+          if (failed || runtimeReady || !text) return;
+          setStatusText('Loading runtime&hellip; ' + text);
+        },
+        totalDependencies: 0,
+        monitorRunDependencies(left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          if (failed || runtimeReady || !left) return;
+          setStatusText('Loading runtime&hellip; (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')');
+        }
+      };
+
+      window.addEventListener('error', function (e) {
+        if (!failed && !started) {
+          showError('<b>Unhandled exception:</b> ' + e.message + ' &mdash; see the JavaScript console.');
+        }
+      });
+
+      // =====================================================================
+      // Disc selection: dropzone + drag & drop
+      // =====================================================================
+      function setSelectedFile(file) {
+        if (!file) return;
+        if (!/\.(ciso|iso|gcm)$/i.test(file.name)) {
+          setStatusText('<b>' + file.name + '</b> is not a supported format. Use ISO (GCM) or CISO.');
+          return;
+        }
+        selectedFile = file;
+        dropzone.classList.add('has-file');
+        document.getElementById('dz-file').textContent =
+          file.name + ' · ' + (file.size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        setStatusText('Ready. Press <b>Play</b> to start.');
+        updateControls();
+      }
+      dropzone.addEventListener('click', function () {
+        if (failed || started || !runtimeReady) return;
+        discElement.click();
+      });
+      dropzone.addEventListener('keydown', function (e) {
+        if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); dropzone.click(); }
+      });
+      discElement.addEventListener('change', function () { setSelectedFile(discElement.files[0]); });
+      ['dragover', 'dragenter'].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.add('dragover'); });
+      });
+      ['dragleave', 'drop'].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.remove('dragover'); });
+      });
+      dropzone.addEventListener('drop', function (e) {
+        if (failed || started || !runtimeReady) return;
+        if (e.dataTransfer.files.length > 0) setSelectedFile(e.dataTransfer.files[0]);
+      });
+
+      // Reads the file in chunks so we can show real progress for ~1GB images.
+      async function readDisc(file, onProgress) {
+        if (file.stream) {
+          var bytes = new Uint8Array(file.size);
+          var reader = file.stream().getReader();
+          var offset = 0;
+          for (;;) {
+            var r = await reader.read();
+            if (r.done) break;
+            bytes.set(r.value, offset);
+            offset += r.value.length;
+            onProgress(offset / file.size);
+          }
+          return bytes;
+        }
+        var buffer = await file.arrayBuffer();
+        onProgress(1);
+        return new Uint8Array(buffer);
+      }
+
+      // The Play click is also the user gesture that unlocks audio playback.
+      playElement.addEventListener('click', async function () {
+        if (started || failed || !runtimeReady || !selectedFile) return;
+        started = true;
+        updateControls();
+
+        try {
+          setStatusText('Copying disc into memory&hellip; this can take a while for large images.');
+          progressElement.hidden = false;
+          var bytes = await readDisc(selectedFile, function (ratio) {
+            progressElement.value = Math.floor(ratio * 100);
+          });
+          Module.FS.writeFile('/game.ciso', bytes);
+        } catch (e) {
+          console.error(e);
+          showError('<b>Failed to load the disc image:</b> ' + e);
+          return;
+        }
+        progressElement.hidden = true;
+
+        // Swap to the game view before the runtime creates the WebGPU surface,
+        // so the canvas has a real on-screen size.
+        document.getElementById('landing').hidden = true;
+        document.getElementById('game').hidden = false;
+        setStatusText('<b>Running.</b> Click the canvas to capture input.');
+        document.getElementById('controls-running-note').hidden = false;
+        applyTouchVisibility();
+        canvasElement.focus();
+        try {
+          seedUserData();
+          var result = Module.callMain(['--dvd', '/game.ciso']);
+          if (result instanceof Promise) {
+            result.catch(function (e) {
+              console.error(e);
+              showError('<b>Runtime error:</b> ' + e + ' &mdash; see the log below.');
+            });
+          }
+          setTimeout(persist, 5000);
+        } catch (e) {
+          console.error(e);
+          showError('<b>Runtime error:</b> ' + e + ' &mdash; see the log below.');
+        }
+      });
+
+      fullscreenElement.addEventListener('click', function () {
+        document.getElementById('frame').requestFullscreen()
+          .then(function () { canvasElement.focus(); })
+          .catch(function (e) { console.error('fullscreen failed:', e); });
+      });
+
+      // =====================================================================
+      // Controls modal
+      // =====================================================================
+      var BIND_ROWS = [
+        { section: 'Movement' },
+        { kind: 'axis', idx: 2, label: 'Move Up' },
+        { kind: 'axis', idx: 3, label: 'Move Down' },
+        { kind: 'axis', idx: 1, label: 'Move Left' },
+        { kind: 'axis', idx: 0, label: 'Move Right' },
+        { section: 'Actions' },
+        { kind: 'button', idx: 0, label: 'A — Action / Roll' },
+        { kind: 'button', idx: 1, label: 'B — Sword' },
+        { kind: 'button', idx: 2, label: 'X — Item' },
+        { kind: 'button', idx: 3, label: 'Y — Item' },
+        { kind: 'button', idx: 6, label: 'L — Target lock' },
+        { kind: 'button', idx: 7, label: 'R — Shield' },
+        { kind: 'button', idx: 5, label: 'Z — Map / Midna' },
+        { kind: 'button', idx: 4, label: 'Start — Pause' },
+        { section: 'D-Pad' },
+        { kind: 'button', idx: 8, label: 'D-Pad Up' },
+        { kind: 'button', idx: 9, label: 'D-Pad Down' },
+        { kind: 'button', idx: 10, label: 'D-Pad Left' },
+        { kind: 'button', idx: 11, label: 'D-Pad Right' },
+      ];
+      var pendingBindings = null;
+      var captureRow = null;
+
+      function getBind(b, row) { return row.kind === 'axis' ? b.axes[row.idx] : b.buttons[row.idx]; }
+      function setBind(b, row, sc) {
+        if (row.kind === 'axis') b.axes[row.idx] = sc; else b.buttons[row.idx] = sc;
+      }
+
+      function renderBindList() {
+        var list = document.getElementById('bind-list');
+        list.textContent = '';
+        BIND_ROWS.forEach(function (row) {
+          if (row.section) {
+            var h = document.createElement('div');
+            h.className = 'bind-section';
+            h.textContent = row.section;
+            list.appendChild(h);
+            return;
+          }
+          var div = document.createElement('div');
+          div.className = 'bind-row';
+          var label = document.createElement('label');
+          label.textContent = row.label;
+          var btn = document.createElement('button');
+          btn.className = 'bind-key';
+          btn.textContent = scancodeName(getBind(pendingBindings, row));
+          btn.addEventListener('click', function () { startCapture(row, btn); });
+          div.appendChild(label);
+          div.appendChild(btn);
+          list.appendChild(div);
+        });
+      }
+
+      function startCapture(row, btn) {
+        captureRow = row;
+        btn.classList.add('capturing');
+        btn.textContent = '…';
+        document.getElementById('capture-overlay').hidden = false;
+      }
+      function finishCapture(scancode) {
+        document.getElementById('capture-overlay').hidden = true;
+        if (captureRow && scancode !== null) {
+          // steal the key from any other slot bound to it
+          BIND_ROWS.forEach(function (r) {
+            if (!r.section && r !== captureRow && getBind(pendingBindings, r) === scancode) {
+              setBind(pendingBindings, r, -1);
+            }
+          });
+          setBind(pendingBindings, captureRow, scancode);
+        }
+        captureRow = null;
+        renderBindList();
+      }
+      window.addEventListener('keydown', function (e) {
+        if (!captureRow) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.code === 'Escape') { finishCapture(null); return; }
+        var sc = CODE_TO_SCANCODE[e.code];
+        finishCapture(sc !== undefined ? sc : null);
+      }, true);
+      document.getElementById('capture-overlay').addEventListener('mousedown', function (e) {
+        if (!captureRow) return;
+        e.preventDefault();
+        var sc = [-2, -3, -4, -5, -6][e.button];
+        finishCapture(sc !== undefined ? sc : null);
+      });
+      document.getElementById('capture-overlay').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+      function openControlsModal() {
+        pendingBindings = { buttons: bindings.buttons.slice(), axes: bindings.axes.slice() };
+        renderBindList();
+        document.getElementById('controls-backdrop').hidden = false;
+      }
+      function closeControlsModal() {
+        document.getElementById('controls-backdrop').hidden = true;
+        finishCapture(null);
+      }
+      document.getElementById('controls-btn').addEventListener('click', openControlsModal);
+      document.getElementById('controls-btn2').addEventListener('click', openControlsModal);
+      document.getElementById('controls-close').addEventListener('click', closeControlsModal);
+      document.getElementById('controls-reset').addEventListener('click', function () {
+        pendingBindings = { buttons: DEFAULT_BUTTONS.slice(), axes: DEFAULT_AXES.slice() };
+        renderBindList();
+      });
+      document.getElementById('controls-save').addEventListener('click', function () {
+        // Triggers mirror the L/R button bindings so analog reads work too.
+        pendingBindings.axes[8] = pendingBindings.buttons[6];
+        pendingBindings.axes[9] = pendingBindings.buttons[7];
+        bindings = pendingBindings;
+        localStorage.setItem(BINDINGS_KEY, JSON.stringify(bindings));
+        if (runtimeReady && !started) {
+          try { seedUserData(); persist(); } catch (e) {}
+        }
+        closeControlsModal();
+      });
+
+      // =====================================================================
+      // Saves modal: list/export/import .gci files from the user-data dir.
+      // =====================================================================
+      function walkFiles(dir, out) {
+        var entries;
+        try { entries = Module.FS.readdir(dir); } catch (e) { return out; }
+        entries.forEach(function (name) {
+          if (name === '.' || name === '..') return;
+          var path = dir + '/' + name;
+          var st;
+          try { st = Module.FS.stat(path); } catch (e) { return; }
+          if (Module.FS.isDir(st.mode)) walkFiles(path, out);
+          else out.push({ path: path, name: name, size: st.size });
+        });
+        return out;
+      }
+
+      function renderSavesList() {
+        var list = document.getElementById('saves-list');
+        list.textContent = '';
+        var files = walkFiles(USER_DIR, []).filter(function (f) { return /\.gci$/i.test(f.name); });
+        if (files.length === 0) {
+          var p = document.createElement('p');
+          p.className = 'modal-note';
+          p.textContent = 'No save files yet. Saves appear here after you save in-game.';
+          list.appendChild(p);
+          return;
+        }
+        files.forEach(function (f) {
+          var row = document.createElement('div');
+          row.className = 'save-row';
+          var name = document.createElement('span');
+          name.className = 'name';
+          name.textContent = f.name;
+          var size = document.createElement('span');
+          size.className = 'size';
+          size.textContent = (f.size / 1024).toFixed(1) + ' KB';
+          var dl = document.createElement('button');
+          dl.className = 'btn-ghost';
+          dl.textContent = 'Download';
+          dl.addEventListener('click', function () {
+            var data = Module.FS.readFile(f.path);
+            var blob = new Blob([data], { type: 'application/octet-stream' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = f.name;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
+          row.appendChild(name);
+          row.appendChild(size);
+          row.appendChild(dl);
+          list.appendChild(row);
+        });
+      }
+
+      function regionCardDir() {
+        var regions = ['EUR', 'USA', 'JAP'];
+        for (var i = 0; i < regions.length; i++) {
+          try {
+            var st = Module.FS.stat(USER_DIR + '/' + regions[i]);
+            if (Module.FS.isDir(st.mode)) return USER_DIR + '/' + regions[i] + '/Card A';
+          } catch (e) {}
+        }
+        return USER_DIR + '/EUR/Card A';
+      }
+
+      function openSavesModal() {
+        renderSavesList();
+        document.getElementById('saves-backdrop').hidden = false;
+      }
+      document.getElementById('saves-btn').addEventListener('click', openSavesModal);
+      document.getElementById('saves-btn2').addEventListener('click', openSavesModal);
+      document.getElementById('saves-close').addEventListener('click', function () {
+        document.getElementById('saves-backdrop').hidden = true;
+      });
+      document.getElementById('save-import').addEventListener('click', function () {
+        document.getElementById('save-import-input').click();
+      });
+      document.getElementById('save-import-input').addEventListener('change', async function () {
+        var file = this.files[0];
+        if (!file) return;
+        var bytes = new Uint8Array(await file.arrayBuffer());
+        var dir = regionCardDir();
+        ensureDir(dir);
+        Module.FS.writeFile(dir + '/' + file.name, bytes);
+        persist();
+        renderSavesList();
+        this.value = '';
+      });
+
+      // =====================================================================
+      // Touch controls: virtual stick + buttons -> dusk_web_virtual_pad().
+      // Default ON for touch devices; toggleable from the game bar.
+      // =====================================================================
+      var TOUCH_KEY = 'dusklight.touch';
+      var isTouchDevice = (navigator.maxTouchPoints > 0) || window.matchMedia('(pointer: coarse)').matches;
+      var touchEnabled = (function () {
+        var stored = localStorage.getItem(TOUCH_KEY);
+        return stored === null ? isTouchDevice : stored === '1';
+      })();
+
+      var padState = { buttons: 0, stickX: 0, stickY: 0, substickX: 0, substickY: 0 };
+      function sendPad() {
+        if (!started || !Module.ccall) return;
+        var trigL = (padState.buttons & 0x0040) ? 255 : 0;
+        var trigR = (padState.buttons & 0x0020) ? 255 : 0;
+        try {
+          Module.ccall('dusk_web_virtual_pad', null,
+            ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [padState.buttons, padState.stickX, padState.stickY,
+             padState.substickX, padState.substickY, trigL, trigR]);
+        } catch (e) { /* runtime gone */ }
+      }
+      function clearPad() {
+        if (!started || !Module.ccall) return;
+        try { Module.ccall('dusk_web_virtual_pad_clear', null, [], []); } catch (e) {}
+      }
+
+      function applyTouchVisibility() {
+        var overlay = document.getElementById('touch-overlay');
+        overlay.hidden = !(touchEnabled && started);
+        document.getElementById('touch-toggle').classList.toggle('active', touchEnabled);
+        if (!touchEnabled) {
+          padState = { buttons: 0, stickX: 0, stickY: 0, substickX: 0, substickY: 0 };
+          clearPad();
+        }
+      }
+      document.getElementById('touch-toggle').addEventListener('click', function () {
+        touchEnabled = !touchEnabled;
+        localStorage.setItem(TOUCH_KEY, touchEnabled ? '1' : '0');
+        applyTouchVisibility();
+      });
+
+      // buttons
+      document.querySelectorAll('#touch-overlay .t-btn').forEach(function (el) {
+        var mask = parseInt(el.dataset.mask, 10);
+        function press(e) {
+          e.preventDefault();
+          el.setPointerCapture(e.pointerId);
+          el.classList.add('pressed');
+          padState.buttons |= mask;
+          sendPad();
+        }
+        function release(e) {
+          el.classList.remove('pressed');
+          padState.buttons &= ~mask;
+          sendPad();
+        }
+        el.addEventListener('pointerdown', press);
+        el.addEventListener('pointerup', release);
+        el.addEventListener('pointercancel', release);
+      });
+
+      // sticks: el principal mueve a Link, el C-stick (amarillo) la cámara/mapa
+      function makeVirtualStick(zoneId, nubId, xKey, yKey, opts) {
+        var zone = document.getElementById(zoneId);
+        var nub = document.getElementById(nubId);
+        var xSign = (opts && opts.invertX) ? -1 : 1;
+        var ySign = (opts && opts.invertY) ? -1 : 1;
+        var activePointer = null;
+        function update(e) {
+          var rect = zone.getBoundingClientRect();
+          var cx = rect.left + rect.width / 2;
+          var cy = rect.top + rect.height / 2;
+          var radius = rect.width / 2;
+          var dx = e.clientX - cx;
+          var dy = e.clientY - cy;
+          var len = Math.hypot(dx, dy);
+          if (len > radius) { dx = dx / len * radius; dy = dy / len * radius; }
+          padState[xKey] = Math.round(xSign * (dx / radius) * 127);
+          padState[yKey] = Math.round(ySign * (-dy / radius) * 127); // GC: up is +Y
+          nub.style.left = (28 + (dx / radius) * 28) + '%';
+          nub.style.top = (28 + (dy / radius) * 28) + '%';
+          sendPad();
+        }
+        function reset() {
+          activePointer = null;
+          padState[xKey] = 0;
+          padState[yKey] = 0;
+          nub.style.left = '28%';
+          nub.style.top = '28%';
+          sendPad();
+        }
+        zone.addEventListener('pointerdown', function (e) {
+          e.preventDefault();
+          activePointer = e.pointerId;
+          zone.setPointerCapture(e.pointerId);
+          update(e);
+        });
+        zone.addEventListener('pointermove', function (e) {
+          if (e.pointerId === activePointer) update(e);
+        });
+        zone.addEventListener('pointerup', function (e) {
+          if (e.pointerId === activePointer) reset();
+        });
+        zone.addEventListener('pointercancel', function (e) {
+          if (e.pointerId === activePointer) reset();
+        });
+      }
+      makeVirtualStick('t-stick-zone', 't-stick-nub', 'stickX', 'stickY');
+      // TP orbits the camera opposite to the raw C-stick X axis, which feels
+      // backwards on a touch stick: flip the horizontal axis for the camera.
+      makeVirtualStick('t-cstick-zone', 't-cstick-nub', 'substickX', 'substickY', { invertX: true });
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>

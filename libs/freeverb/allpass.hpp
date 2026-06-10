@@ -7,6 +7,10 @@
 #ifndef _allpass_
 #define _allpass_
 
+#if defined(__wasm__)
+#include <cmath>
+#endif
+
 class allpass
 {
 public:
@@ -29,6 +33,11 @@ public:
 inline float allpass::process(float input)
 {
 	float bufout = buffer[bufidx];
+#if defined(__wasm__)
+	// No FTZ/DAZ on wasm (see denormals.h): flush the recirculating sample
+	// manually so denormals don't make the reverb crawl.
+	if (std::fabs(bufout) < 1e-15f) bufout = 0.0f;
+#endif
 	buffer[bufidx] = input + (bufout*feedback);
 
 	if(++bufidx>=bufsize) bufidx = 0;

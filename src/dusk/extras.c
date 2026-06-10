@@ -70,7 +70,7 @@ int strnicmp(const char* str1, const char* str2, int n) {
 #endif
 
 void DCZeroRange(void* addr, uint32_t nBytes) {
-#if defined(_MSC_VER) || TARGET_ANDROID
+#if defined(_MSC_VER) || TARGET_ANDROID || defined(__EMSCRIPTEN__)
     memset(addr, 0, nBytes);
 #else
     bzero(addr, nBytes);

@@ -7,11 +7,16 @@
 #include "dolphin/mtx.h"
 
 // Platform detection - Little Endian targets
-#if defined(_WIN32) || defined(__x86_64__) || defined(__i386__) || defined(__aarch64__) || defined(_M_X64) || defined(_M_IX86)
+#if defined(_WIN32) || defined(__x86_64__) || defined(__i386__) || defined(__aarch64__) || defined(_M_X64) || defined(_M_IX86) || defined(__EMSCRIPTEN__) || defined(__wasm__)
     #define TARGET_LITTLE_ENDIAN 1
 #else
     #define TARGET_LITTLE_ENDIAN 0
 #endif
+
+// Fail fast on platforms the detection above misses: a silent mismatch would
+// corrupt every big-endian read from disc data.
+static_assert((std::endian::native == std::endian::little) == (TARGET_LITTLE_ENDIAN == 1),
+              "TARGET_LITTLE_ENDIAN does not match the actual target endianness");
 
 #if TARGET_LITTLE_ENDIAN
     #ifdef _MSC_VER

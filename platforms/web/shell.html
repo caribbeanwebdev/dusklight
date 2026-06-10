@@ -755,6 +755,7 @@
             runtimeReady = true;
             setStatusText('Waiting for a disc image&hellip; pick an ISO/CISO and press <b>Play</b>.');
             updateControls();
+            maybeAutoLoadFromQuery();
           });
         },
         onAbort(what) {
@@ -833,26 +834,9 @@
         return new Uint8Array(buffer);
       }
 
-      // The Play click is also the user gesture that unlocks audio playback.
-      playElement.addEventListener('click', async function () {
-        if (started || failed || !runtimeReady || !selectedFile) return;
-        started = true;
-        updateControls();
-
-        try {
-          setStatusText('Copying disc into memory&hellip; this can take a while for large images.');
-          progressElement.hidden = false;
-          var bytes = await readDisc(selectedFile, function (ratio) {
-            progressElement.value = Math.floor(ratio * 100);
-          });
-          Module.FS.writeFile('/game.ciso', bytes);
-        } catch (e) {
-          console.error(e);
-          showError('<b>Failed to load the disc image:</b> ' + e);
-          return;
-        }
+      function launchGame(bytes) {
+        Module.FS.writeFile('/game.ciso', bytes);
         progressElement.hidden = true;
-
         // Swap to the game view before the runtime creates the WebGPU surface,
         // so the canvas has a real on-screen size.
         document.getElementById('landing').hidden = true;
@@ -875,7 +859,73 @@
           console.error(e);
           showError('<b>Runtime error:</b> ' + e + ' &mdash; see the log below.');
         }
+      }
+
+      // The Play click is also the user gesture that unlocks audio playback.
+      playElement.addEventListener('click', async function () {
+        if (started || failed || !runtimeReady || !selectedFile) return;
+        started = true;
+        updateControls();
+
+        var bytes;
+        try {
+          setStatusText('Copying disc into memory&hellip; this can take a while for large images.');
+          progressElement.hidden = false;
+          bytes = await readDisc(selectedFile, function (ratio) {
+            progressElement.value = Math.floor(ratio * 100);
+          });
+        } catch (e) {
+          console.error(e);
+          showError('<b>Failed to load the disc image:</b> ' + e);
+          return;
+        }
+        launchGame(bytes);
       });
+
+      // ?dump=<url>: auto-load a disc image from a URL. Only runs when the
+      // query parameter is present. The URL must be same-origin or served
+      // with CORS headers (the page is cross-origin isolated). Audio stays
+      // muted until the first click on the canvas (no user gesture here).
+      async function maybeAutoLoadFromQuery() {
+        var dumpUrl = new URLSearchParams(location.search).get('dump');
+        if (!dumpUrl || started || failed) return false;
+        started = true;
+        updateControls();
+        try {
+          setStatusText('Downloading disc image&hellip;');
+          progressElement.hidden = false;
+          var response = await fetch(dumpUrl);
+          if (!response.ok) throw new Error('HTTP ' + response.status + ' fetching the disc URL');
+          var total = Number(response.headers.get('Content-Length')) || 0;
+          var bytes;
+          if (response.body && total) {
+            bytes = new Uint8Array(total);
+            var reader = response.body.getReader();
+            var offset = 0;
+            for (;;) {
+              var r = await reader.read();
+              if (r.done) break;
+              bytes.set(r.value, offset);
+              offset += r.value.length;
+              progressElement.value = Math.floor((offset / total) * 100);
+            }
+            bytes = bytes.subarray(0, offset);
+          } else {
+            bytes = new Uint8Array(await response.arrayBuffer());
+          }
+          launchGame(bytes);
+          return true;
+        } catch (e) {
+          console.error(e);
+          started = false;
+          progressElement.hidden = true;
+          setStatusText('<b>Could not auto-load the disc from ?dump=:</b> ' + e +
+                        ' &mdash; the URL must allow CORS. Pick a local file instead.', true);
+          statusElement.classList.remove('error');
+          updateControls();
+          return false;
+        }
+      }
 
       fullscreenElement.addEventListener('click', function () {
         document.getElementById('frame').requestFullscreen()
